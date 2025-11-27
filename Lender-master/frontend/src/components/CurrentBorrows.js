@@ -3,56 +3,46 @@ import { dashboardAPI } from '../services/api';
 
 const CurrentBorrows = () => {
   const [borrows, setBorrows] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // user-edited filters
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
   });
 
-  // filters that are applied to fetch
-  const [appliedFilters, setAppliedFilters] = useState({
-    startDate: '',
-    endDate: '',
-  });
-
   useEffect(() => {
-    const fetchCurrentBorrows = async () => {
-      setLoading(true);
-      try {
-        const params = {};
-        if (appliedFilters.startDate) params.startDate = appliedFilters.startDate;
-        if (appliedFilters.endDate)   params.endDate   = appliedFilters.endDate;
+    fetchCurrentBorrows(true); // Show loading on initial load or filter change
+    // Removed auto-refresh - use manual refresh button instead
+  }, [filters]);
 
-        const response = await dashboardAPI.getCurrentBorrows(params);
-        setBorrows(response.data.data || []);
-      } catch (err) {
-        console.error('Error fetching current borrows:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCurrentBorrows();
-  }, [appliedFilters]);
+  const fetchCurrentBorrows = async (showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const params = {};
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+      
+      const response = await dashboardAPI.getCurrentBorrows(params);
+      setBorrows(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching current borrows:', err);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
+    setFilters({
+      ...filters,
       [name]: value,
-    }));
-  };
-
-  const applyFilters = () => {
-    setAppliedFilters(filters);
+    });
   };
 
   const clearFilters = () => {
-    const empty = { startDate: '', endDate: '' };
-    setFilters(empty);
-    setAppliedFilters(empty);
+    setFilters({
+      startDate: '',
+      endDate: '',
+    });
   };
 
   const formatDate = (dateString) => {
@@ -65,22 +55,21 @@ const CurrentBorrows = () => {
     return new Date(dueDate) < new Date();
   };
 
-  if (loading) {
+  if (loading && borrows.length === 0) {
     return <div className="loading">Loading current borrows...</div>;
   }
 
   return (
     <div>
       <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          className="btn btn-secondary"
-          onClick={() => setAppliedFilters(filters)}
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => fetchCurrentBorrows(false)}
           style={{ padding: '8px 16px', fontSize: '0.9rem' }}
         >
           🔄 Refresh
         </button>
       </div>
-
       <div className="filter-controls">
         <label>
           Start Date:
@@ -91,8 +80,7 @@ const CurrentBorrows = () => {
             onChange={handleFilterChange}
           />
         </label>
-
-        <label style={{ marginLeft: '1rem' }}>
+        <label>
           End Date:
           <input
             type="date"
@@ -101,13 +89,7 @@ const CurrentBorrows = () => {
             onChange={handleFilterChange}
           />
         </label>
-
-        <button onClick={applyFilters} style={{ marginLeft: '1rem' }}>
-          Apply Filters
-        </button>
-        <button onClick={clearFilters} style={{ marginLeft: '0.5rem' }}>
-          Clear Filters
-        </button>
+        <button onClick={clearFilters}>Clear Filters</button>
       </div>
 
       {borrows.length === 0 ? (
@@ -143,7 +125,7 @@ const CurrentBorrows = () => {
                       )}
                     </td>
                     <td>{formatDate(loan.borrowDate)}</td>
-                    <td style={overdue ? { color: '#e74c3c', fontWeight: 600 } : {}}>
+                    <td style={overdue ? { color: '#e74c3c', fontWeight: '600' } : {}}>
                       {formatDate(loan.dueDate)}
                     </td>
                     <td>

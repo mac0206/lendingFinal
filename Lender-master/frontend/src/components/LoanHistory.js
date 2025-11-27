@@ -3,83 +3,72 @@ import { loanHistoryAPI } from '../services/api';
 
 const LoanHistory = () => {
   const [loans, setLoans] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // filters state — user is editing here
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
     status: '',
   });
 
-  // committedFilters = the filters actually used in the last fetch
-  const [committedFilters, setCommittedFilters] = useState({
-    startDate: '',
-    endDate: '',
-    status: '',
-  });
-
   useEffect(() => {
-    // fetch when committedFilters changes
-    const fetchLoanHistory = async () => {
-      setLoading(true);
-      try {
-        const params = {};
-        if (committedFilters.startDate)
-          params.startDate = committedFilters.startDate;
-        if (committedFilters.endDate)
-          params.endDate = committedFilters.endDate;
-        if (committedFilters.status)
-          params.status = committedFilters.status;
+    fetchLoanHistory(true); // Show loading on initial load or filter change
+    // Removed auto-refresh - use manual refresh button instead
+  }, [filters]);
 
-        const response = await loanHistoryAPI.getHistory(params);
-        setLoans(response.data.data || []);
-      } catch (err) {
-        console.error('Error fetching loan history:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLoanHistory();
-  }, [committedFilters]);
+  const fetchLoanHistory = async (showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const params = {};
+      if (filters.startDate) params.startDate = filters.startDate;
+      if (filters.endDate) params.endDate = filters.endDate;
+      if (filters.status) params.status = filters.status;
+      
+      const response = await loanHistoryAPI.getHistory(params);
+      setLoans(response.data.data || []);
+    } catch (err) {
+      console.error('Error fetching loan history:', err);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
+    setFilters({
+      ...filters,
       [name]: value,
-    }));
-  };
-
-  const applyFilters = () => {
-    setCommittedFilters(filters);
+    });
   };
 
   const clearFilters = () => {
-    const empty = { startDate: '', endDate: '', status: '' };
-    setFilters(empty);
-    setCommittedFilters(empty);
+    setFilters({
+      startDate: '',
+      endDate: '',
+      status: '',
+    });
   };
 
-  const formatDate = dateString => {
+  const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  if (loading && loans.length === 0) {
     return <div className="loading">Loading loan history...</div>;
   }
 
   return (
     <div>
       <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="btn btn-secondary" onClick={() => setCommittedFilters(filters)}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => fetchLoanHistory(false)}
+          style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+        >
           🔄 Refresh
         </button>
       </div>
-
-      <div className="filter-controls" style={{ marginBottom: '1rem' }}>
+      <div className="filter-controls">
         <label>
           Start Date:
           <input
@@ -89,8 +78,7 @@ const LoanHistory = () => {
             onChange={handleFilterChange}
           />
         </label>
-
-        <label style={{ marginLeft: '1rem' }}>
+        <label>
           End Date:
           <input
             type="date"
@@ -99,13 +87,13 @@ const LoanHistory = () => {
             onChange={handleFilterChange}
           />
         </label>
-
-        <label style={{ marginLeft: '1rem' }}>
+        <label>
           Status:
           <select
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
+            style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' }}
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -113,13 +101,7 @@ const LoanHistory = () => {
             <option value="overdue">Overdue</option>
           </select>
         </label>
-
-        <button onClick={applyFilters} style={{ marginLeft: '1rem' }}>
-          Apply Filters
-        </button>
-        <button onClick={clearFilters} style={{ marginLeft: '0.5rem' }}>
-          Clear Filters
-        </button>
+        <button onClick={clearFilters}>Clear Filters</button>
       </div>
 
       {loans.length === 0 ? (
@@ -172,3 +154,4 @@ const LoanHistory = () => {
 };
 
 export default LoanHistory;
+
