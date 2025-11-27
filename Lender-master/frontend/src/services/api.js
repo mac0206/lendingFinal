@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // API URLs from environment variables or defaults
-const API_BASE_URL_A = process.env.REACT_APP_API_URL_A || 'http://localhost:5000/api';
-const API_BASE_URL_B = process.env.REACT_APP_API_URL_B || 'http://localhost:5001/api';
-const API_BASE_URL_C = process.env.REACT_APP_API_URL_C || 'http://localhost:5002/api';
+const API_BASE_URL_A = 'https://lendingfinal.onrender.com/api';
+const API_BASE_URL_B = 'https://lendingfinal-1.onrender.com/api';
+const API_BASE_URL_C = 'https://lendingfinal-member-c.onrender.com/api';
 
 // Member A API (Catalog & Member Profiles)
 const apiA = axios.create({
