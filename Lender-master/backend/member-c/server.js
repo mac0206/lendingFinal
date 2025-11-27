@@ -57,7 +57,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5002;
+const PORT = 5002;
 app.listen(PORT, () => {
   console.log(`Member C Backend server running on port ${PORT}`);
 });
